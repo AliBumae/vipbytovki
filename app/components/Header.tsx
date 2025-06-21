@@ -1,0 +1,1 @@
+<Link href="/delivery" className="font-semibold hover:text-blue-600 transition-colors">Доставка</Link> 

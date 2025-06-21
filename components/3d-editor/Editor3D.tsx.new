@@ -1,0 +1,343 @@
+"use client";
+
+import { Canvas } from "@react-three/fiber";
+import { Environment, OrbitControls, PerspectiveCamera, OrthographicCamera } from "@react-three/drei";
+import { Suspense, useState } from "react";
+import BuildingModel from "./BuildingModel";
+import ControlPanel from "./ControlPanel";
+import SavedConfigs from "./SavedConfigs";
+import SiteMap from "./SiteMap";
+import InteriorFurniture from "./InteriorFurniture";
+
+interface Editor3DProps {
+  onConfigChange?: (config: any) => void;
+}
+
+export default function Editor3D({ onConfigChange }: Editor3DProps) {
+  // Основная конфигурация бытовки
+  const [buildingConfig, setBuildingConfig] = useState({
+    dimensions: { width: 2.4, length: 6, height: 2.5 },
+    doorPosition: "front" as "front" | "back" | "left" | "right",
+    windowsCount: 2,
+    roofType: "flat" as "flat" | "gable" | "hip",
+    exteriorColor: "#f0f0f0",
+    roofColor: "#d0d0d0",
+    // Новые параметры
+    doorOpen: false,
+    windowsOpen: false,
+    interiorFurniture: [] as string[], // ID выбранных предметов мебели
+    wallTexture: "standard", // ID текстуры стен
+    floorTexture: "standard", // ID текстуры пола
+    roofTexture: "standard", // ID текстуры крыши
+    windowType: "standard" as "standard" | "sliding" | "panoramic", // Тип окон
+    lightsOn: false, // Свет включен/выключен
+    windowPositions: { // Позиции окон на каждой стене
+      front: [],
+      back: [],
+      left: [],
+      right: []
+    },
+    // Добавляем координаты расположения бытовки на карте
+    mapLocation: { lat: 55.7558, lng: 37.6173 } // Москва по умолчанию
+  });
+  
+  // Настройки отображения
+  const [viewSettings, setViewSettings] = useState({
+    viewMode: "exterior" as "exterior" | "interior", // Внешний или внутренний вид
+    cameraPosition: "free" as "free" | "front" | "back" | "left" | "right" | "top", // Позиция камеры
+    cameraType: "perspective" as "perspective" | "orthographic", // Тип камеры
+    autoRotate: false, // Автоматическое вращение камеры
+    timeOfDay: "day" as "day" | "night", // Время суток для освещения
+    weather: "clear" as "clear" | "rain" | "snow", // Погодные условия
+    // Новые параметры для управления панелями
+    showLeftPanel: true, // Показывать левую панель управления
+    showRightPanel: true, // Показывать правую панель управления
+  });
+  
+  // Объект с текстурами
+  const textures = {
+    standard: {
+      wall: '/textures/wall.jpg',
+      roof: '/textures/roof.jpg',
+      floor: '/textures/floor.jpg'
+    },
+    premium: {
+      wall: '/textures/premium/wall_premium.jpg',
+      roof: '/textures/premium/roof_premium.jpg',
+      floor: '/textures/premium/floor_premium.jpg'
+    },
+    deluxe: {
+      wall: '/textures/deluxe/wall_deluxe.jpg',
+      roof: '/textures/deluxe/roof_deluxe.jpg',
+      floor: '/textures/deluxe/floor_deluxe.jpg'
+    }
+  };
+  
+  // Обработчик изменения конфигурации
+  const handleConfigChange = (config: any) => {
+    // Обновляем конфигурацию бытовки на основе выбранных параметров
+    const newConfig = {
+      ...buildingConfig,
+      dimensions: {
+        width: config.dimensions.width,
+        length: config.dimensions.length,
+        height: config.dimensions.height,
+      }
+    };
+    
+    // Изменяем тип крыши в зависимости от выбранной модели
+    if (config.model === "standard") {
+      newConfig.roofType = "flat";
+    } else if (config.model === "large") {
+      newConfig.roofType = "hip";
+    } else if (config.model === "small") {
+      newConfig.roofType = "gable";
+    }
+    
+    // Устанавливаем количество окон
+    if (config.options && config.options.includes("extra_windows")) {
+      newConfig.windowsCount = 3;
+    } else if (config.options && config.options.includes("panoramic_windows")) {
+      newConfig.windowsCount = 4;
+      newConfig.windowType = "panoramic";
+    } else {
+      newConfig.windowsCount = 2;
+    }
+    
+    // Устанавливаем цвет в зависимости от материала
+    if (config.material === "premium") {
+      newConfig.exteriorColor = "#f5f5dc"; // Бежевый
+    } else if (config.material === "deluxe") {
+      newConfig.exteriorColor = "#dcdcdc"; // Светло-серый
+    } else {
+      newConfig.exteriorColor = "#f0f0f0"; // Белый
+    }
+    
+    // Устанавливаем положение двери
+    if (config.doorPosition) {
+      newConfig.doorPosition = config.doorPosition;
+    }
+    
+    // Устанавливаем тип крыши
+    if (config.roofType) {
+      newConfig.roofType = config.roofType;
+    }
+    
+    // Обновляем внутреннее обустройство
+    if (config.furniture) {
+      newConfig.interiorFurniture = config.furniture;
+    }
+    
+    // Обновляем текстуры
+    if (config.wallTexture) newConfig.wallTexture = config.wallTexture;
+    if (config.floorTexture) newConfig.floorTexture = config.floorTexture;
+    if (config.roofTexture) newConfig.roofTexture = config.roofTexture;
+    
+    setBuildingConfig(newConfig);
+    
+    // Передаем полную конфигурацию родительскому компоненту
+    if (onConfigChange) {
+      onConfigChange({
+        ...config,
+        buildingConfig: newConfig
+      });
+    }
+  };
+
+  // Обработчик изменения настроек вида
+  const handleViewSettingsChange = (settings: Partial<typeof viewSettings>) => {
+    setViewSettings({
+      ...viewSettings,
+      ...settings
+    });
+  };
+
+  // Обработчик переключения состояния двери
+  const toggleDoor = () => {
+    setBuildingConfig({
+      ...buildingConfig,
+      doorOpen: !buildingConfig.doorOpen
+    });
+  };
+
+  // Обработчик переключения состояния окон
+  const toggleWindows = () => {
+    setBuildingConfig({
+      ...buildingConfig,
+      windowsOpen: !buildingConfig.windowsOpen
+    });
+  };
+
+  // Обработчик переключения света
+  const toggleLights = () => {
+    setBuildingConfig({
+      ...buildingConfig,
+      lightsOn: !buildingConfig.lightsOn
+    });
+  };
+
+  // Получение позиции камеры в зависимости от выбранного ракурса
+  const getCameraPosition = () => {
+    switch (viewSettings.cameraPosition) {
+      case "front":
+        return [0, 2.5, 10] as [number, number, number];
+      case "back":
+        return [0, 2.5, -10] as [number, number, number];
+      case "left":
+        return [-10, 2.5, 0] as [number, number, number];
+      case "right":
+        return [10, 2.5, 0] as [number, number, number];
+      case "top":
+        return [0, 15, 0] as [number, number, number];
+      default:
+        return [8, 5, 8] as [number, number, number]; // free - позиция по умолчанию
+    }
+  };
+
+  // Обработчик выбора местоположения на карте
+  const handleLocationSelect = (location: { lat: number; lng: number }) => {
+    setBuildingConfig({
+      ...buildingConfig,
+      mapLocation: location
+    });
+  };
+  
+  // Обработчик загрузки сохраненной конфигурации
+  const handleLoadConfig = (config: any) => {
+    if (config.buildingConfig) {
+      setBuildingConfig(config.buildingConfig);
+    } else {
+      // Обновляем конфигурацию бытовки на основе выбранных параметров
+      const newConfig = {
+        ...buildingConfig
+      };
+      
+      // Обновляем размеры если они есть
+      if (config.dimensions) {
+        newConfig.dimensions = config.dimensions;
+      }
+      
+      // Изменяем тип крыши в зависимости от выбранной модели
+      if (config.model === "standard") {
+        newConfig.roofType = "flat";
+      } else if (config.model === "large") {
+        newConfig.roofType = "hip";
+      } else if (config.model === "small") {
+        newConfig.roofType = "gable";
+      }
+      
+      // Устанавливаем положение двери
+      if (config.doorPosition) {
+        newConfig.doorPosition = config.doorPosition;
+      }
+      
+      // Устанавливаем тип крыши
+      if (config.roofType) {
+        newConfig.roofType = config.roofType;
+      }
+      
+      // Обновляем внутреннее обустройство
+      if (config.furniture) {
+        newConfig.interiorFurniture = config.furniture;
+      }
+      
+      // Обновляем текстуры
+      if (config.wallTexture) newConfig.wallTexture = config.wallTexture;
+      if (config.floorTexture) newConfig.floorTexture = config.floorTexture;
+      if (config.roofTexture) newConfig.roofTexture = config.roofTexture;
+      
+      // Обновляем местоположение на карте
+      if (config.mapLocation) {
+        newConfig.mapLocation = config.mapLocation;
+      }
+      
+      setBuildingConfig(newConfig);
+    }
+  };
+  
+  // Добавляем состояние для управления видимостью панелей
+  const [activePanel, setActivePanel] = useState<'controls' | 'configs' | 'map' | 'furniture' | null>(null);
+  
+  // Функция для переключения активной панели
+  const togglePanel = (panel: 'controls' | 'configs' | 'map' | 'furniture') => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
+  
+  return (
+    <div className="w-full h-full relative">
+      {/* Основная область с 3D моделью бытовки */}
+      <Canvas shadows>
+        {/* Камера */}
+        {viewSettings.cameraType === "perspective" ? (
+          <PerspectiveCamera 
+            makeDefault 
+            position={getCameraPosition()} 
+            fov={40}
+          />
+        ) : (
+          <OrthographicCamera 
+            makeDefault 
+            position={getCameraPosition()} 
+            zoom={40}
+          />
+        )}
+        
+        {/* Управление камерой */}
+        <OrbitControls 
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={viewSettings.cameraPosition === "free"}
+          autoRotate={viewSettings.autoRotate}
+          autoRotateSpeed={0.5}
+          target={[0, 1.2, 0]}
+        />
+        
+        {/* Освещение */}
+        <ambientLight intensity={viewSettings.timeOfDay === "day" ? 0.5 : 0.2} />
+        <directionalLight 
+          position={[10, 10, 5]} 
+          intensity={viewSettings.timeOfDay === "day" ? 1 : 0.1} 
+          castShadow 
+          shadow-mapSize-width={2048} 
+          shadow-mapSize-height={2048}
+        />
+        {viewSettings.timeOfDay === "night" && (
+          <pointLight position={[0, 5, 0]} intensity={0.2} color="#94a3b8" />
+        )}
+        
+        {/* Основная 3D модель */}
+        <Suspense fallback={null}>
+          <BuildingModel 
+            config={{
+              ...buildingConfig,
+              viewMode: viewSettings.viewMode,
+              timeOfDay: viewSettings.timeOfDay,
+              weather: viewSettings.weather
+            }}
+            texturesPaths={textures}
+          />
+          
+          {/* Environment для реалистичного освещения */}
+          <Environment preset={viewSettings.timeOfDay === "day" ? "sunset" : "night"} />
+        </Suspense>
+      </Canvas>
+      
+      {/* Небольшая панель с основными настройками просмотра */}
+      <div className="absolute bottom-4 right-4 z-10 flex gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-md">
+        <button 
+          onClick={() => handleViewSettingsChange({ viewMode: viewSettings.viewMode === "exterior" ? "interior" : "exterior" })}
+          className={`px-3 py-1.5 rounded text-sm ${viewSettings.viewMode === "interior" ? "bg-blue-600 text-white" : "bg-white text-gray-800 border border-gray-200"}`}
+        >
+          {viewSettings.viewMode === "exterior" ? "Интерьер" : "Экстерьер"}
+        </button>
+        
+        <button 
+          onClick={() => handleViewSettingsChange({ autoRotate: !viewSettings.autoRotate })}
+          className={`px-3 py-1.5 rounded text-sm ${viewSettings.autoRotate ? "bg-blue-600 text-white" : "bg-white text-gray-800 border border-gray-200"}`}
+        >
+          {viewSettings.autoRotate ? "Стоп" : "Вращение"}
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -30,7 +30,7 @@ import { useState, useEffect } from "react";
 import captureScreenshot from "../../components/3d-editor/captureScreenshot";
 
 // Динамический импорт 3D редактора с отключением SSR
-const Editor3D = dynamic(() => import("@/components/3d-editor/Editor3D"), {
+const Editor3D = dynamic(() => import("@/components/3d-editor/ClientEditor3D"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center">

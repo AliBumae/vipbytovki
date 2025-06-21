@@ -8,7 +8,7 @@ import { ArrowRight, Check, Phone, Square, DoorOpen, Building2, Shield, AlertTri
 import { useState, useEffect } from "react";
 
 // Динамический импорт 3D редактора с отключением SSR
-const Editor3D = dynamic(() => import("@/components/3d-editor/Editor3D"), {
+const Editor3D = dynamic(() => import("@/components/3d-editor/ClientEditor3D"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-96 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center">
@@ -137,7 +137,7 @@ export default function Home() {
                 {/* Основной контейнер */}
                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-700/50">
                   <div className="rounded-2xl overflow-hidden shadow-xl">
-                    <Editor3D />
+                    <ClientEditor3D />
                   </div>
                   
                   {/* Информационная панель */}

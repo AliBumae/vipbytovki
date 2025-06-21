@@ -1,12 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import Editor3D from "@/components/3d-editor/Editor3D";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Phone, Square, DoorOpen, Building2, Shield, AlertTriangle, Clock, CreditCard, Award, Users, MapPin, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 
+// Динамический импорт 3D редактора с отключением SSR
+const Editor3D = dynamic(() => import("@/components/3d-editor/Editor3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-300 text-lg">Загрузка 3D редактора...</p>
+      </div>
+    </div>
+  )
+});
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import Editor3D from "@/components/3d-editor/Editor3D";
 import { Button } from "@/components/ui/button";
 import { 
   Phone, 
@@ -29,18 +29,14 @@ import {
 import { useState, useEffect } from "react";
 import captureScreenshot from "../../components/3d-editor/captureScreenshot";
 
-// Динамический импорт 3D редактора с отключением SSR
-const Editor3D = dynamic(() => import("@/components/3d-editor/Editor3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-300 text-lg">Загрузка 3D редактора...</p>
-      </div>
-    </div>
-  )
-});
+function formatDate(dateString: string) {
+  if (!dateString) return '';
+  try {
+    return new Date(dateString).toLocaleDateString('ru-RU');
+  } catch {
+    return dateString;
+  }
+}
 
 export default function ConstructorPage() {
   const [config, setConfig] = useState<any>(null);

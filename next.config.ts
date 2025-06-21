@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true
+  },
+  experimental: {
+    serverComponentsExternalPackages: ["@react-three/fiber", "@react-three/drei", "three"]
   }
 };
 

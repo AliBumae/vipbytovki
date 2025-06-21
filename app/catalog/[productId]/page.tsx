@@ -1,7 +1,22 @@
+<<<<<<< HEAD
 import { getModelById } from '../../../lib/buildingModels';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
+=======
+import { getModelById, BYTOVKA_MODELS, HOZBLOK_MODELS } from '../../../lib/buildingModels';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+
+// Генерируем статические параметры для всех возможных productId
+export async function generateStaticParams() {
+  const allModels = [...BYTOVKA_MODELS, ...HOZBLOK_MODELS];
+  return allModels.map((model) => ({
+    productId: model.id,
+  }));
+}
+
+>>>>>>> 860806d59127a7cf9ac5dd7391b1c89ede4d8b40
 export default function ProductPage({ params }: { params: { productId: string } }) {
   const model = getModelById(params.productId);
 

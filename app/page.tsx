@@ -137,7 +137,7 @@ export default function Home() {
                 {/* Основной контейнер */}
                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-700/50">
                   <div className="rounded-2xl overflow-hidden shadow-xl">
-                    <ClientEditor3D />
+                    <Editor3D />
                   </div>
                   
                   {/* Информационная панель */}
